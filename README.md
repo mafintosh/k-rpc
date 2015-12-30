@@ -84,6 +84,15 @@ function onreply (message, node) {
 
 If a closest query is being executed while a population request in being run the closest query will take priority.
 
+You can return `false` from onreply to stop the query. This is useful if you are only looking for a single peer for example.
+
+``` js
+function onreply(message, node) {
+  console.log('will only fire once')
+  return false
+}
+```
+
 #### `rpc.query(node, query, callback)`
 
 Query a single node. If the node has a token it is set as `a.token` in the query automatically.
