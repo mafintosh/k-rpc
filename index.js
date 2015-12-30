@@ -91,25 +91,17 @@ RPC.prototype.queryAll = function (nodes, message, visit, cb) {
   if (!message.a) message.a = {}
   message.a.id = this.id
 
-  var self = this
-  var i = 0
   var stop = false
   var missing = nodes.length
   var hits = 0
 
-  send()
-
-  function send () {
-    for (; i < nodes.length; i++) {
-      if (self.socket.inflight >= self.concurrency || stop) return
-      if (message.a) message.a.token = nodes[i].token
-      self._query(nodes[i], message, done)
-    }
+  for (var i = 0; i < nodes.length; i++) {
+    if (this.socket.inflight >= this.concurrency || stop) return
+    if (message.a) message.a.token = nodes[i].token
+    this._query(nodes[i], message, done)
   }
 
   function done (err, res, peer) {
-    send()
-
     if (!err) hits++
     if (!err && !stop) {
       if (visit && visit(res, peer) === false) stop = true
