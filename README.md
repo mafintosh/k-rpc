@@ -74,13 +74,15 @@ Find peers close the specified target buffer whilst sending the specified query.
 ``` js
 // find peers sharing a torrent info_hash
 rpc.closest(infoHash, {q: 'get_peers', a: {id: rpc.id: info_hash: infoHash}}, onreply, function () {
-  console.log('internal routing table fully populated')
+  console.log('no more peers to be found')
 })
 
 function onreply (message, node) {
   if (message.r && message.r.values) console.log('received peers')
 }
 ```
+
+If a closest query is being executed while a population request in being run the closest query will take priority.
 
 #### `rpc.query(node, query, callback)`
 
