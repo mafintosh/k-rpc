@@ -96,7 +96,6 @@ RPC.prototype.queryAll = function (nodes, message, visit, cb) {
   var hits = 0
 
   for (var i = 0; i < nodes.length; i++) {
-    if (this.socket.inflight >= this.concurrency || stop) return
     if (message.a) message.a.token = nodes[i].token
     this._query(nodes[i], message, done)
   }
