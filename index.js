@@ -60,23 +60,27 @@ function RPC (opts) {
 
 util.inherits(RPC, events.EventEmitter)
 
-RPC.prototype.add = function (node) {
-  if (!node.id) throw new Error('node requires an id')
-  if (equals(node.id, this.id)) return
-  this.table.add(node)
-}
+RPC.prototype.response = function (node, query, response, nodes, cb) {
+  if (typeof nodes === 'function') {
+    cb = nodes
+    nodes = null
+  }
 
-RPC.prototype.remove = function (node) {
-  if (!node.id) throw new Error('node requires an id')
-  this.table.remove(node)
-}
-
-RPC.prototype.response = function (node, query, response, cb) {
+  response.id = this.id
+  if (nodes) response.nodes = encodeNodes(nodes)
   this.socket.response(node, query, response, cb)
 }
 
 RPC.prototype.error = function (node, query, error, cb) {
   this.socket.error(node, query, error, cb)
+}
+
+RPC.prototype.bind = function (port, cb) {
+  this.socket.bind(port, cb)
+}
+
+RPC.prototype.address = function () {
+  return this.socket.address()
 }
 
 RPC.prototype.query = function (node, message, cb) {
@@ -211,13 +215,14 @@ RPC.prototype._closest = function (target, message, background, visit, cb) {
 
   function done (err, res, peer) {
     pending--
+    queried[peer.address + ':' + peer.port] = true // need this for bootstrap nodes
 
     var r = res && res.r
     if (!r) return
 
     if (peer && peer.id && self.table.get(peer.id)) {
-      if (err && err.code === 'ETIMEDOUT') self.remove(node)
-      else if (!err) self.add(node) // update node
+      if (err && err.code === 'ETIMEDOUT') self.table.remove(peer)
+      else if (!err) self.table.add(peer)
     }
 
     if (!err && r.id) {
@@ -230,7 +235,7 @@ RPC.prototype._closest = function (target, message, background, visit, cb) {
 
       count++
       add(node)
-      if (background) self.add(node)
+      if (background) self.table.add(node)
     }
 
     var nodes = r.nodes ? parseNodes(r.nodes) : []
@@ -245,6 +250,25 @@ RPC.prototype._closest = function (target, message, background, visit, cb) {
     if (equals(node.id, self.id)) return
     table.add(node)
   }
+}
+
+function encodeNodes (nodes) {
+  var buf = new Buffer(nodes.length * 26)
+  var ptr = 0
+
+  for (var i = 0; i < nodes.length; i++) {
+    var node = nodes[i]
+    if (!node.id) continue
+    node.id.copy(buf, ptr)
+    ptr += 20
+    var ip = (node.host || node.address).split('.')
+    for (var j = 0; j < ip.length; j++) buf[ptr++] = parseInt(ip[j] || 0, 10)
+    buf.writeUInt16BE(node.port, ptr)
+    ptr += 2
+  }
+
+  if (ptr === buf.length) return buf
+  return buf.slice(0, ptr)
 }
 
 function parseNodes (buf) {

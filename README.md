@@ -115,9 +115,9 @@ Destroy the underlying rpc socket.
 
 Emitted when a query is received.
 
-#### `rpc.response(node, query, response, [callback])`
+#### `rpc.response(node, query, response, [nodes], [callback])`
 
-Send a response to a node for a specific query.
+Send a response to a node for a specific query. If you pass in an array of nodes `{id: nodeId, host: someHost, port: somePort}` they will be added to the response.
 
 #### `rpc.error(node, query, error, [callback])`
 
