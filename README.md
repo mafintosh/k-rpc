@@ -8,6 +8,8 @@ npm install k-rpc
 
 Read [BEP 5](http://www.bittorrent.org/beps/bep_0005.html) and [BEP 44](http://www.bittorrent.org/beps/bep_0044.html) for more background info.
 
+[![build status](http://img.shields.io/travis/mafintosh/k-rpc.svg?style=flat)](http://travis-ci.org/mafintosh/k-rpc)
+
 ## Usage
 
 ``` js
