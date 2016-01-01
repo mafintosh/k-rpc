@@ -53,9 +53,13 @@ Create a new rpc instance. Options include
 
 Buffer containing the local node id.
 
+#### `rpc.table`
+
+Routing table populated by running `rpc.populate`. This is a [k-bucket](https://github.com/tristanls/k-bucket) instance.
+
 #### `rpc.populate(query, [callback])`
 
-Populate the internal routing table with nodes discovered by looking for other peers close to our own local node id using the specified query. The internal routing table will be used for subsequent closest queries to take load of the bootstrap nodes.
+Populate the `rpc.table` routing table with nodes discovered by looking for other peers close to our own local node id using the specified query. The internal routing table will be used for subsequent closest queries to take load of the bootstrap nodes.
 
 ``` js
 // send a find_node query
@@ -118,15 +122,6 @@ Send a response to a node for a specific query.
 #### `rpc.error(node, query, error, [callback])`
 
 Send an error response for a query.
-
-#### `rpc.add(node)`
-
-Explicitly add a node to the internal routing table. A node must look like this `{host: host, port: port, id: nodeId}`.
-Calling the populate method will populate the internal routing table for you.
-
-#### `rpc.remove(node)`
-
-Explicitly remove a node from the internal routing table
 
 ## License
 
