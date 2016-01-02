@@ -215,7 +215,7 @@ RPC.prototype._closest = function (target, message, background, visit, cb) {
 
   function done (err, res, peer) {
     pending--
-    queried[peer.address + ':' + peer.port] = true // need this for bootstrap nodes
+    if (peer) queried[peer.address + ':' + peer.port] = true // need this for bootstrap nodes
 
     var r = res && res.r
     if (!r) return
