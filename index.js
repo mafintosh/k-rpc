@@ -66,7 +66,7 @@ RPC.prototype.response = function (node, query, response, nodes, cb) {
     nodes = null
   }
 
-  response.id = this.id
+  if (!response.id) response.id = this.id
   if (nodes) response.nodes = encodeNodes(nodes)
   this.socket.response(node, query, response, cb)
 }
@@ -85,15 +85,15 @@ RPC.prototype.address = function () {
 
 RPC.prototype.query = function (node, message, cb) {
   if (!message.a) message.a = {}
-  message.a.id = this.id
-  message.a.token = node.token
+  if (!message.a.id) message.a.id = this.id
+  if (!message.a.token) message.a.token = node.token
 
   this._query(node, message, cb)
 }
 
 RPC.prototype.queryAll = function (nodes, message, visit, cb) {
   if (!message.a) message.a = {}
-  message.a.id = this.id
+  if (!message.a.id) message.a.id = this.id
 
   var stop = false
   var missing = nodes.length
@@ -162,7 +162,7 @@ RPC.prototype._closest = function (target, message, background, visit, cb) {
   var stop = false
 
   if (!message.a) message.a = {}
-  message.a.id = this.id
+  if (!message.a.id) message.a.id = this.id
 
   var table = new KBucket({
     localNodeId: target,
