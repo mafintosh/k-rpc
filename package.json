@@ -1,6 +1,6 @@
 {
   "name": "k-rpc",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Low-level implementation of the k-rpc protocol used the BitTorrent DHT.",
   "main": "index.js",
   "dependencies": {
