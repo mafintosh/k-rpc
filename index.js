@@ -99,6 +99,8 @@ RPC.prototype.queryAll = function (nodes, message, visit, cb) {
   var missing = nodes.length
   var hits = 0
 
+  if (!missing) return cb(new Error('All queries failed'), 0)
+
   for (var i = 0; i < nodes.length; i++) {
     if (message.a) message.a.token = nodes[i].token
     this._query(nodes[i], message, done)
