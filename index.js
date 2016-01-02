@@ -23,12 +23,12 @@ function RPC (opts) {
 
   this.id = opts.id || crypto.randomBytes(20)
   this.socket = opts.socket || socket(opts)
-  this.nodes = (opts.nodes || BOOTSTRAP_NODES).map(parsePeer)
+  this.bootstrap = (opts.nodes || opts.bootstrap || BOOTSTRAP_NODES).map(parsePeer)
   this.concurrency = opts.concurrency || MAX_CONCURRENCY
   this.k = opts.k || K
 
   this.pending = []
-  this.table = null
+  this.nodes = null
 
   this.socket.on('query', onquery)
   this.socket.on('warning', onwarning)
@@ -130,13 +130,13 @@ RPC.prototype.destroy = function () {
 RPC.prototype.clear = function () {
   var self = this
 
-  this.table = new KBucket({
+  this.nodes = new KBucket({
     localNodeId: this.id,
     numberOfNodesPerKBucket: this.k,
     numberOfNodesToPing: this.concurrency
   })
 
-  this.table.on('ping', onping)
+  this.nodes.on('ping', onping)
 
   function onping (older, newer) {
     self.emit('ping', older, newer)
@@ -181,9 +181,9 @@ RPC.prototype._closest = function (target, message, background, visit, cb) {
     if (background && self.socket.inflight >= (self.concurrency / 2) | 0 && otherInflight) return
 
     var closest = table.closest({id: target}, self.k)
-    if (closest.length < self.nodes.length) {
-      closest = self.table.closest({id: target}, self.k)
-      if (closest.length < self.nodes.length) bootstrap()
+    if (closest.length < self.bootstrap.length) {
+      closest = self.nodes.closest({id: target}, self.k)
+      if (closest.length < self.bootstrap.length) bootstrap()
     }
 
     for (var i = 0; i < closest.length; i++) {
@@ -209,7 +209,7 @@ RPC.prototype._closest = function (target, message, background, visit, cb) {
     if (!once) return
     once = false
 
-    self.nodes.forEach(function (peer) {
+    self.bootstrap.forEach(function (peer) {
       pending++
       self.socket.query(peer, message, done)
     })
@@ -222,9 +222,9 @@ RPC.prototype._closest = function (target, message, background, visit, cb) {
     var r = res && res.r
     if (!r) return
 
-    if (peer && peer.id && self.table.get(peer.id)) {
-      if (err && err.code === 'ETIMEDOUT') self.table.remove(peer)
-      else if (!err) self.table.add(peer)
+    if (peer && peer.id && self.nodes.get(peer.id)) {
+      if (err && err.code === 'ETIMEDOUT') self.nodes.remove(peer)
+      else if (!err) self.nodes.add(peer)
     }
 
     if (!err && r.id) {
@@ -237,7 +237,7 @@ RPC.prototype._closest = function (target, message, background, visit, cb) {
 
       count++
       add(node)
-      if (background) self.table.add(node)
+      if (background) self.nodes.add(node)
     }
 
     var nodes = r.nodes ? parseNodes(r.nodes) : []
@@ -264,7 +264,7 @@ function encodeNodes (nodes) {
     node.id.copy(buf, ptr)
     ptr += 20
     var ip = (node.host || node.address).split('.')
-    for (var j = 0; j < ip.length; j++) buf[ptr++] = parseInt(ip[j] || 0, 10)
+    for (var j = 0; j < 4; j++) buf[ptr++] = parseInt(ip[j] || 0, 10)
     buf.writeUInt16BE(node.port, ptr)
     ptr += 2
   }
