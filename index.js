@@ -227,7 +227,7 @@ RPC.prototype._closest = function (target, message, background, visit, cb) {
       else if (!err) self.nodes.add(peer)
     }
 
-    if (!err && r.id) {
+    if (!err && r.id && Buffer.isBuffer(r.id) && r.id.length === 20) {
       var node = {
         id: r.id,
         port: peer.port,
@@ -260,7 +260,7 @@ function encodeNodes (nodes) {
 
   for (var i = 0; i < nodes.length; i++) {
     var node = nodes[i]
-    if (!node.id) continue
+    if (!node.id || node.id.length !== 20) continue
     node.id.copy(buf, ptr)
     ptr += 20
     var ip = (node.host || node.address).split('.')
