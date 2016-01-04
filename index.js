@@ -34,6 +34,7 @@ function RPC (opts) {
   this.socket.on('warning', onwarning)
   this.socket.on('error', onerror)
   this.socket.on('update', onupdate)
+  this.socket.on('listening', onlistening)
 
   events.EventEmitter.call(this)
   this.clear()
@@ -47,6 +48,10 @@ function RPC (opts) {
 
   function onerror (err) {
     self.emit('error', err)
+  }
+
+  function onlistening () {
+    self.emit('listening')
   }
 
   function onwarning (err) {

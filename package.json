@@ -6,7 +6,7 @@
   "dependencies": {
     "buffer-equals": "^1.0.3",
     "k-bucket": "^0.6.0",
-    "k-rpc-socket": "^1.1.0"
+    "k-rpc-socket": "^1.3.0"
   },
   "devDependencies": {
     "standard": "^5.4.1",
