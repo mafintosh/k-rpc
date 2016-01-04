@@ -237,7 +237,10 @@ RPC.prototype._closest = function (target, message, background, visit, cb) {
 
       count++
       add(node)
-      if (background) self.nodes.add(node)
+      if (background) {
+        self.nodes.add(node)
+        self.emit('node', node)
+      }
     }
 
     var nodes = r.nodes ? parseNodes(r.nodes) : []
