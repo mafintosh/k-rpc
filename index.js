@@ -21,7 +21,7 @@ function RPC (opts) {
 
   var self = this
 
-  this.id = opts.id || crypto.randomBytes(20)
+  this.id = opts.id || opts.nodeId || crypto.randomBytes(20)
   this.socket = opts.socket || socket(opts)
   this.bootstrap = (opts.nodes || opts.bootstrap || BOOTSTRAP_NODES).map(parsePeer)
   this.concurrency = opts.concurrency || MAX_CONCURRENCY
