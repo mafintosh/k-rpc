@@ -257,16 +257,13 @@ RPC.prototype._closest = function (target, message, background, visit, cb) {
     }
 
     if (!err && isNodeId(r.id)) {
-      var node = {
+      count++
+      add({
         id: r.id,
         port: peer.port,
         host: peer.host || peer.address,
         distance: 0
-      }
-
-      count++
-      add(node)
-      self._addNode(node)
+      })
     }
 
     var nodes = r.nodes ? parseNodes(r.nodes) : []
