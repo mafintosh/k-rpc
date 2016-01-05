@@ -21,7 +21,7 @@ function RPC (opts) {
 
   var self = this
 
-  this.id = opts.id || opts.nodeId || crypto.randomBytes(20)
+  this.id = toBuffer(opts.id || opts.nodeId || crypto.randomBytes(20))
   this.socket = opts.socket || socket(opts)
   this.bootstrap = opts.bootstrap === false ? [] : [].concat(opts.nodes || opts.bootstrap || BOOTSTRAP_NODES).map(parsePeer)
   this.concurrency = opts.concurrency || MAX_CONCURRENCY
@@ -329,3 +329,9 @@ function parsePeer (peer) {
 }
 
 function noop () {}
+
+function toBuffer (str) {
+  if (typeof str === 'string') return new Buffer(str, 'hex')
+  if (Buffer.isBuffer(str)) return str
+  throw new Error('Pass a buffer or a string')
+}
