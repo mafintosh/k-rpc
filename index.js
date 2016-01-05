@@ -23,7 +23,7 @@ function RPC (opts) {
 
   this.id = opts.id || opts.nodeId || crypto.randomBytes(20)
   this.socket = opts.socket || socket(opts)
-  this.bootstrap = (opts.nodes || opts.bootstrap || BOOTSTRAP_NODES).map(parsePeer)
+  this.bootstrap = opts.bootstrap === false ? [] : [].concat(opts.nodes || opts.bootstrap || BOOTSTRAP_NODES).map(parsePeer)
   this.concurrency = opts.concurrency || MAX_CONCURRENCY
   this.k = opts.k || K
 
@@ -59,6 +59,14 @@ function RPC (opts) {
   }
 
   function onquery (query, peer) {
+    if (query.a && isNodeId(query.a.id) && !self.nodes.get(query.a.id)) {
+      self._addNode({
+        id: query.a.id,
+        host: peer.address || peer.host,
+        port: peer.port,
+        distance: 0
+      })
+    }
     self.emit('query', query, peer)
   }
 }
@@ -91,8 +99,7 @@ RPC.prototype.address = function () {
 RPC.prototype.query = function (node, message, cb) {
   if (!message.a) message.a = {}
   if (!message.a.id) message.a.id = this.id
-  if (!message.a.token) message.a.token = node.token
-
+  if (!message.a.token && node.token) message.a.token = node.token
   this._query(node, message, cb)
 }
 
@@ -103,20 +110,23 @@ RPC.prototype.queryAll = function (nodes, message, visit, cb) {
   var stop = false
   var missing = nodes.length
   var hits = 0
+  var error = null
+  var reduceErrors = this.reduceErrors
 
-  if (!missing) return cb(new Error('All queries failed'), 0)
+  if (!missing) return cb(new Error('No nodes to query'), 0)
 
   for (var i = 0; i < nodes.length; i++) {
-    if (message.a) message.a.token = nodes[i].token
+    if (message.a && nodes[i].token) message.a.token = nodes[i].token
     this._query(nodes[i], message, done)
   }
 
   function done (err, res, peer) {
     if (!err) hits++
+    else if (err.code >= 300 && err.code < 400) error =  err
     if (!err && !stop) {
       if (visit && visit(res, peer) === false) stop = true
     }
-    if (!--missing) cb(hits ? null : new Error('All queries failed'), hits)
+    if (!--missing) cb(hits ? null : error || new Error('All queries failed'), hits)
   }
 }
 
@@ -128,8 +138,8 @@ RPC.prototype._query = function (node, message, cb) {
   }
 }
 
-RPC.prototype.destroy = function () {
-  this.socket.destroy()
+RPC.prototype.destroy = function (cb) {
+  this.socket.destroy(cb)
 }
 
 RPC.prototype.clear = function () {
@@ -154,6 +164,12 @@ RPC.prototype.populate = function (target, message, cb) {
 
 RPC.prototype.closest = function (target, message, visit, cb) {
   this._closest(target, message, false, visit, cb)
+}
+
+RPC.prototype._addNode = function (node) {
+  var old = this.nodes.get(node.id)
+  this.nodes.add(node)
+  if (!old) this.emit('node', node)
 }
 
 RPC.prototype._closest = function (target, message, background, visit, cb) {
@@ -186,9 +202,9 @@ RPC.prototype._closest = function (target, message, background, visit, cb) {
     if (background && self.socket.inflight >= (self.concurrency / 2) | 0 && otherInflight) return
 
     var closest = table.closest({id: target}, self.k)
-    if (closest.length < self.bootstrap.length) {
+    if (!closest.length || closest.length < self.bootstrap.length) {
       closest = self.nodes.closest({id: target}, self.k)
-      if (closest.length < self.bootstrap.length) bootstrap()
+      if (!closest.length || closest.length < self.bootstrap.length) bootstrap()
     }
 
     for (var i = 0; i < closest.length; i++) {
@@ -213,7 +229,6 @@ RPC.prototype._closest = function (target, message, background, visit, cb) {
   function bootstrap () {
     if (!once) return
     once = false
-
     self.bootstrap.forEach(function (peer) {
       pending++
       self.socket.query(peer, message, done)
@@ -229,10 +244,9 @@ RPC.prototype._closest = function (target, message, background, visit, cb) {
 
     if (peer && peer.id && self.nodes.get(peer.id)) {
       if (err && err.code === 'ETIMEDOUT') self.nodes.remove(peer)
-      else if (!err) self.nodes.add(peer)
     }
 
-    if (!err && r.id && Buffer.isBuffer(r.id) && r.id.length === 20) {
+    if (!err && isNodeId(r.id)) {
       var node = {
         id: r.id,
         port: peer.port,
@@ -242,10 +256,7 @@ RPC.prototype._closest = function (target, message, background, visit, cb) {
 
       count++
       add(node)
-      if (background) {
-        self.nodes.add(node)
-        self.emit('node', node)
-      }
+      self._addNode(node)
     }
 
     var nodes = r.nodes ? parseNodes(r.nodes) : []
@@ -260,6 +271,10 @@ RPC.prototype._closest = function (target, message, background, visit, cb) {
     if (equals(node.id, self.id)) return
     table.add(node)
   }
+}
+
+function isNodeId (id) {
+  return id && Buffer.isBuffer(id) && id.length === 20
 }
 
 function encodeNodes (nodes) {
