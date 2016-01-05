@@ -111,7 +111,6 @@ RPC.prototype.queryAll = function (nodes, message, visit, cb) {
   var missing = nodes.length
   var hits = 0
   var error = null
-  var reduceErrors = this.reduceErrors
 
   if (!missing) return cb(new Error('No nodes to query'), 0)
 
@@ -122,7 +121,7 @@ RPC.prototype.queryAll = function (nodes, message, visit, cb) {
 
   function done (err, res, peer) {
     if (!err) hits++
-    else if (err.code >= 300 && err.code < 400) error =  err
+    else if (err.code >= 300 && err.code < 400) error = err
     if (!err && !stop) {
       if (visit && visit(res, peer) === false) stop = true
     }
