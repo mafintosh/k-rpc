@@ -32,6 +32,7 @@ function RPC (opts) {
   this.nodes = null
 
   this.socket.on('query', onquery)
+  this.socket.on('response', onresponse)
   this.socket.on('warning', onwarning)
   this.socket.on('error', onerror)
   this.socket.on('update', onupdate)
@@ -60,15 +61,23 @@ function RPC (opts) {
   }
 
   function onquery (query, peer) {
-    if (query.a && isNodeId(query.a.id) && !self.nodes.get(query.a.id)) {
+    addNode(query.a, peer)
+    self.emit('query', query, peer)
+  }
+
+  function onresponse (reply, peer) {
+    addNode(reply.r, peer)
+  }
+
+  function addNode (data, peer) {
+    if (data && isNodeId(data.id) && !self.nodes.get(data.id)) {
       self._addNode({
-        id: query.a.id,
+        id: data.id,
         host: peer.address || peer.host,
         port: peer.port,
         distance: 0
       })
     }
-    self.emit('query', query, peer)
   }
 }
 
@@ -284,7 +293,7 @@ function encodeNodes (nodes) {
 
   for (var i = 0; i < nodes.length; i++) {
     var node = nodes[i]
-    if (!node.id || node.id.length !== 20) continue
+    if (!isNodeId(node.id)) continue
     node.id.copy(buf, ptr)
     ptr += 20
     var ip = (node.host || node.address).split('.')
