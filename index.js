@@ -26,6 +26,7 @@ function RPC (opts) {
   this.bootstrap = opts.bootstrap === false ? [] : [].concat(opts.nodes || opts.bootstrap || BOOTSTRAP_NODES).map(parsePeer)
   this.concurrency = opts.concurrency || MAX_CONCURRENCY
   this.k = opts.k || K
+  this.destroyed = false
 
   this.pending = []
   this.nodes = null
@@ -138,6 +139,7 @@ RPC.prototype._query = function (node, message, cb) {
 }
 
 RPC.prototype.destroy = function (cb) {
+  this.destroyed = true
   this.socket.destroy(cb)
 }
 
@@ -195,7 +197,7 @@ RPC.prototype._closest = function (target, message, background, visit, cb) {
   kick()
 
   function kick () {
-    if (self.socket.inflight >= self.concurrency) return
+    if (self.destroyed || self.socket.inflight >= self.concurrency) return
 
     var otherInflight = self.socket.inflight - pending
     if (background && self.socket.inflight >= (self.concurrency / 2) | 0 && otherInflight) return
