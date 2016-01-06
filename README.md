@@ -1,6 +1,6 @@
 # k-rpc
 
-Low-level implementation of the k-rpc protocol used the BitTorrent DHT.
+Low-level implementation of the k-rpc protocol used by the BitTorrent DHT.
 
 ```
 npm install k-rpc
