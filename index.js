@@ -227,13 +227,17 @@ RPC.prototype._closest = function (target, message, background, visit, cb) {
       queried[id] = true
 
       pending++
-      self.socket.query(peer, message, done)
+      self.socket.query(peer, message, afterQuery)
     }
 
     if (!pending) {
       self.socket.removeListener(evt, kick)
-      cb(null, count)
+      process.nextTick(done)
     }
+  }
+
+  function done () {
+    cb(null, count)
   }
 
   function bootstrap () {
@@ -241,11 +245,11 @@ RPC.prototype._closest = function (target, message, background, visit, cb) {
     once = false
     self.bootstrap.forEach(function (peer) {
       pending++
-      self.socket.query(peer, message, done)
+      self.socket.query(peer, message, afterQuery)
     })
   }
 
-  function done (err, res, peer) {
+  function afterQuery (err, res, peer) {
     pending--
     if (peer) queried[peer.address + ':' + peer.port] = true // need this for bootstrap nodes
 
