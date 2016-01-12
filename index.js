@@ -23,7 +23,7 @@ function RPC (opts) {
 
   this.id = toBuffer(opts.id || opts.nodeId || crypto.randomBytes(20))
   this.socket = opts.socket || socket(opts)
-  this.bootstrap = opts.bootstrap === false ? [] : [].concat(opts.nodes || opts.bootstrap || BOOTSTRAP_NODES).map(parsePeer)
+  this.bootstrap = toBootstrapArray(opts.nodes || opts.bootstrap)
   this.concurrency = opts.concurrency || MAX_CONCURRENCY
   this.k = opts.k || K
   this.destroyed = false
@@ -282,6 +282,12 @@ RPC.prototype._closest = function (target, message, background, visit, cb) {
     if (equals(node.id, self.id)) return
     table.add(node)
   }
+}
+
+function toBootstrapArray (val) {
+  if (val === false) return []
+  if (val === true) return BOOTSTRAP_NODES
+  return [].concat(val || BOOTSTRAP_NODES).map(parsePeer)
 }
 
 function isNodeId (id) {
