@@ -25,6 +25,7 @@ function RPC (opts) {
   this.socket = opts.socket || socket(opts)
   this.bootstrap = toBootstrapArray(opts.nodes || opts.bootstrap)
   this.concurrency = opts.concurrency || MAX_CONCURRENCY
+  this.backgroundConcurrency = opts.backgroundConcurrency || (this.concurrency / 4) | 0
   this.k = opts.k || K
   this.destroyed = false
 
@@ -44,7 +45,7 @@ function RPC (opts) {
   function onupdate () {
     while (self.pending.length && self.socket.inflight < self.concurrency) {
       var next = self.pending.shift()
-      self.socket.query(next[0], next[1], next[2])
+      self.query(next[0], next[1], next[2])
     }
   }
 
@@ -106,13 +107,6 @@ RPC.prototype.address = function () {
   return this.socket.address()
 }
 
-RPC.prototype.query = function (node, message, cb) {
-  if (!message.a) message.a = {}
-  if (!message.a.id) message.a.id = this.id
-  if (!message.a.token && node.token) message.a.token = node.token
-  this._query(node, message, cb)
-}
-
 RPC.prototype.queryAll = function (nodes, message, visit, cb) {
   if (!message.a) message.a = {}
   if (!message.a.id) message.a.id = this.id
@@ -125,8 +119,7 @@ RPC.prototype.queryAll = function (nodes, message, visit, cb) {
   if (!missing) return cb(new Error('No nodes to query'), 0)
 
   for (var i = 0; i < nodes.length; i++) {
-    if (message.a && nodes[i].token) message.a.token = nodes[i].token
-    this._query(nodes[i], message, done)
+    this.query(nodes[i], message, done)
   }
 
   function done (err, res, peer) {
@@ -139,10 +132,13 @@ RPC.prototype.queryAll = function (nodes, message, visit, cb) {
   }
 }
 
-RPC.prototype._query = function (node, message, cb) {
+RPC.prototype.query = function (node, message, cb) {
   if (this.socket.inflight >= this.concurrency) {
     this.pending.push([node, message, cb])
   } else {
+    if (!message.a) message.a = {}
+    if (!message.a.id) message.a.id = this.id
+    if (node.token) message.a.token = node.token
     this.socket.query(node, message, cb)
   }
 }
@@ -208,8 +204,8 @@ RPC.prototype._closest = function (target, message, background, visit, cb) {
   function kick () {
     if (self.destroyed || self.socket.inflight >= self.concurrency) return
 
-    var otherInflight = self.socket.inflight - pending
-    if (background && self.socket.inflight >= (self.concurrency / 2) | 0 && otherInflight) return
+    var otherInflight = self.pending.length + self.socket.inflight - pending
+    if (background && self.socket.inflight >= self.backgroundConcurrency && otherInflight) return
 
     var closest = table.closest({id: target}, self.k)
     if (!closest.length || closest.length < self.bootstrap.length) {
