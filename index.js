@@ -154,10 +154,9 @@ RPC.prototype.clear = function () {
   this.nodes = new KBucket({
     localNodeId: this.id,
     numberOfNodesPerKBucket: this.k,
-    numberOfNodesToPing: this.concurrency
+    numberOfNodesToPing: this.concurrency,
+    ping: onping
   })
-
-  this.nodes.on('ping', onping)
 
   function onping (older, newer) {
     self.emit('ping', older, newer)
