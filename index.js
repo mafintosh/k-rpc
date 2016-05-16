@@ -154,9 +154,10 @@ RPC.prototype.clear = function () {
   this.nodes = new KBucket({
     localNodeId: this.id,
     numberOfNodesPerKBucket: this.k,
-    numberOfNodesToPing: this.concurrency,
-    ping: onping
+    numberOfNodesToPing: this.concurrency
   })
+
+  this.nodes.on('ping', onping)
 
   function onping (older, newer) {
     self.emit('ping', older, newer)
@@ -206,9 +207,9 @@ RPC.prototype._closest = function (target, message, background, visit, cb) {
     var otherInflight = self.pending.length + self.socket.inflight - pending
     if (background && self.socket.inflight >= self.backgroundConcurrency && otherInflight) return
 
-    var closest = table.closest({id: target}, self.k)
+    var closest = table.closest(target, self.k)
     if (!closest.length || closest.length < self.bootstrap.length) {
-      closest = self.nodes.closest({id: target}, self.k)
+      closest = self.nodes.closest(target, self.k)
       if (!closest.length || closest.length < self.bootstrap.length) bootstrap()
     }
 
@@ -252,7 +253,7 @@ RPC.prototype._closest = function (target, message, background, visit, cb) {
     if (!r) return
 
     if (peer && peer.id && self.nodes.get(peer.id)) {
-      if (err && err.code === 'ETIMEDOUT') self.nodes.remove(peer)
+      if (err && err.code === 'ETIMEDOUT') self.nodes.remove(peer.id)
     }
 
     if (!err && isNodeId(r.id)) {
