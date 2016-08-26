@@ -9,7 +9,7 @@
     "k-rpc-socket": "^1.5.0"
   },
   "devDependencies": {
-    "standard": "^7.0.1",
+    "standard": "*",
     "tape": "^4.4.0"
   },
   "scripts": {
