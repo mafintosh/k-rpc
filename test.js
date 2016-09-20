@@ -1,8 +1,8 @@
 var krpc = require('./')
 var tape = require('tape')
 
-tape('query + reply', function (t) {
-  var server = krpc()
+function genericQuery (t, ipv6) {
+  var server = krpc({ipv6: ipv6})
 
   server.on('query', function (query, peer) {
     t.same(query.q.toString(), 'echo')
@@ -13,6 +13,7 @@ tape('query + reply', function (t) {
   server.bind(0, function () {
     var id = new Buffer('aaaabbbbccccddddeeeeaaaabbbbccccddddeeee', 'hex')
     var client = krpc({
+      ipv6: ipv6,
       nodes: ['localhost:' + server.address().port]
     })
 
@@ -25,16 +26,24 @@ tape('query + reply', function (t) {
     })
 
     function onreply (message, node) {
-      t.same(node.address, '127.0.0.1')
+      t.same(node.address, ipv6 ? '::1' : '127.0.0.1')
       t.same(node.port, server.address().port)
       t.same(message.r.hello, 42)
     }
   })
+}
+
+tape('ipv4 query + reply', function (t) {
+  genericQuery(t, false)
 })
 
-tape('query + closest', function (t) {
-  var server = krpc()
-  var other = krpc()
+tape('ipv6 query + reply', function (t) {
+  genericQuery(t, true)
+})
+
+function genericClosest (t, ipv6) {
+  var server = krpc({ipv6: ipv6})
+  var other = krpc({ipv6: ipv6})
   var visitedOther = false
 
   other.on('query', function (query, peer) {
@@ -47,7 +56,7 @@ tape('query + closest', function (t) {
   server.on('query', function (query, peer) {
     t.same(query.q.toString(), 'echo')
     t.same(query.a.hello, 42)
-    server.response(peer, query, {hello: 42}, [{host: '127.0.0.1', port: other.address().port, id: other.id}])
+    server.response(peer, query, {hello: 42}, [{host: ipv6 ? '::1' : '127.0.0.1', port: other.address().port, id: other.id}])
   })
 
   other.bind(0, function () {
@@ -55,6 +64,7 @@ tape('query + closest', function (t) {
       var replies = 2
       var id = new Buffer('aaaabbbbccccddddeeeeaaaabbbbccccddddeeee', 'hex')
       var client = krpc({
+        ipv6: ipv6,
         nodes: ['localhost:' + server.address().port]
       })
 
@@ -75,4 +85,12 @@ tape('query + closest', function (t) {
       }
     })
   })
+}
+
+tape('ipv4 query + closest', function (t) {
+  genericClosest(t, false)
+})
+
+tape('ipv6 query + closest', function (t) {
+  genericClosest(t, true)
 })
