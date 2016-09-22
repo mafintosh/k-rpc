@@ -102,10 +102,10 @@ RPC.prototype.response = function (node, query, response, nodes, cb) {
 
   if (nodes) {
     if (want.indexOf('n4') != -1) {
-      response.nodes = encodeNodes(nodes, false)
+      response.nodes = this._encodeNodes(nodes, false)
     }
     if (want.indexOf('n6') != -1) {
-      response.nodes6 = encodeNodes(nodes, true)
+      response.nodes6 = this._encodeNodes(nodes, true)
     }
   }
 
@@ -299,19 +299,23 @@ RPC.prototype._closest = function (target, message, background, visit, cb) {
   }
 }
 
-function toBootstrapArray (ipv6, val) {
-  if (val === false) return []
-
-  var nodes = ipv6 ? BOOTSTRAP_NODES_IPV6 : BOOTSTRAP_NODES
-  if (val === true) return nodes
-  return [].concat(val || nodes).map(parsePeer)
+RPC.prototype._encodeIP = function (addr, buf, offset, ipv6) {
+  return (ipv6 ? encodeipv6 : encodeipv4)(addr, buf, offset)
 }
 
-function isNodeId (id) {
-  return id && Buffer.isBuffer(id) && id.length === 20
+RPC.prototype._parseIP = function (buf, offset) {
+  return (this.ipv6 ? parseIpv6 : parseIpv4)(buf, offset)
 }
 
-function encodeNodes (nodes, ipv6) {
+function parseIpv4 (buf, offset) {
+  return buf[offset++] + '.' + buf[offset++] + '.' + buf[offset++] + '.' + buf[offset++]
+}
+
+function parseIpv6(buf, offset) {
+  return Address6.fromByteArray(buf.slice(offset, offset + 16)).correctForm(); // Returns shortest possible form (e.g. '::1')
+}
+
+RPC.prototype._encodeNodes = function (nodes, ipv6) {
   var base = 22; // 20 byte node id + 2 byte port
   var size = base + (ipv6 ? 16 : 4); // 16 byte ipv6 address or 4 byte ipv4 address
 
@@ -325,7 +329,7 @@ function encodeNodes (nodes, ipv6) {
     node.id.copy(buf, ptr)
     ptr += 20
     var ip = (node.host || node.address)
-    ptr = (ipv6 ? encodeipv6 : encodeipv4)(ip, buf, ptr);
+    ptr = this._encodeIP(ip, buf, ptr, ipv6);
     buf.writeUInt16BE(node.port, ptr)
     ptr += 2
   }
@@ -350,6 +354,18 @@ function encodeipv6(addr, buf, offset) {
   return offset + 16;
 }
 
+function toBootstrapArray (ipv6, val) {
+  if (val === false) return []
+
+  var nodes = ipv6 ? BOOTSTRAP_NODES_IPV6 : BOOTSTRAP_NODES
+  if (val === true) return nodes
+  return [].concat(val || nodes).map(function(p) { return parsePeer(p, ipv6) })
+}
+
+function isNodeId (id) {
+  return id && Buffer.isBuffer(id) && id.length === 20
+}
+
 function parseNodes (buf, ipv6) {
   var contacts = []
 
@@ -362,7 +378,7 @@ function parseNodes (buf, ipv6) {
       if (!port) continue
       contacts.push({
         id: buf.slice(i, i + 20),
-        host: (ipv6 ? parseIpv6 : parseIpv4)(buf, i + 20),
+        host: this._parseIP(buf, i + 20),
         port: port,
         distance: 0,
         token: null
@@ -379,16 +395,14 @@ function parseNodeipv4(buf, offset) {
   return buf.slice(offset)
 }
 
-function parseIpv4 (buf, offset) {
-  return buf[offset++] + '.' + buf[offset++] + '.' + buf[offset++] + '.' + buf[offset++]
-}
-
-function parseIpv6(buf, offset) {
-  return Address6.fromByteArray(buf.slice(offset, offset + 16)).correctForm(); // Returns shortest possible form (e.g. '::1')
-}
-
-function parsePeer (peer) {
-  if (typeof peer === 'string') return {host: peer.split(':')[0], port: Number(peer.split(':')[1])}
+function parsePeer (peer, ipv6) {
+  if (typeof peer === 'string') {
+    if (ipv6) {
+      var parsed = Address6.fromURL(peer)
+      return {host: parsed.address.correctForm(), port: parsed.port}
+    }
+    return {host: peer.split(':')[0], port: Number(peer.split(':')[1])}
+  }
   return peer
 }
 
