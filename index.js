@@ -285,7 +285,7 @@ RPC.prototype._closest = function (target, message, background, visit, cb) {
     }
 
     var nodesResp = self.ipv6 ? r.nodes6 : r.nodes;
-    var nodes = nodesResp ? parseNodes(nodesResp, self.ipv6) : []
+    var nodes = nodesResp ? self.parseNodes(nodesResp, self.ipv6) : []
     for (var i = 0; i < nodes.length; i++) add(nodes[i])
 
     if (visit && visit(res, peer) === false) stop = true
@@ -303,7 +303,7 @@ RPC.prototype._encodeIP = function (addr, buf, offset, ipv6) {
   return (ipv6 ? encodeipv6 : encodeipv4)(addr, buf, offset)
 }
 
-function _parseIP(buf, offset, ipv6) {
+RPC.prototype._parseIP = function(buf, offset, ipv6) {
   return (ipv6 ? parseIpv6 : parseIpv4)(buf, offset)
 }
 
@@ -348,7 +348,11 @@ function encodeipv6(addr, buf, offset) {
   // Address6.toByteArray only creates as large of an array as necessary
   // Since the DHT protocol requires full-length IPv6 addresses, we padd
   // the buffer with enough zero bytes to make it 16 bytes long.
-  var myAddr = new Address6(addr)
+  try {
+    var myAddr = new Address6(addr)
+  } catch (err) {
+    err.message;
+  }
   if (!myAddr.valid) {
     throw new Error("Blah")
   }
@@ -370,7 +374,7 @@ function isNodeId (id) {
   return id && Buffer.isBuffer(id) && id.length === 20
 }
 
-function parseNodes (buf, ipv6) {
+RPC.prototype.parseNodes = function(buf, ipv6) {
   var contacts = []
 
   var base = 22; // 20 byte node id + 2 byte port
@@ -381,7 +385,7 @@ function parseNodes (buf, ipv6) {
     if (!port) continue
     contacts.push({
                     id: buf.slice(i, i + 20),
-                    host: _parseIP(buf, i + 20, ipv6),
+                    host: this._parseIP(buf, i + 20, ipv6),
                     port: port,
                     distance: 0,
                     token: null
