@@ -1,6 +1,16 @@
 var krpc = require('./')
 var tape = require('tape')
 
+function localHost(ipv6, plainIpv6) {
+  if (ipv6) {
+    if (!plainIpv6) {
+      return '[::1]'
+    }
+    return '::1'
+  }
+  return '127.0.0.1'
+}
+
 function genericQuery (t, ipv6) {
   var server = krpc({ipv6: ipv6})
 
@@ -14,7 +24,7 @@ function genericQuery (t, ipv6) {
     var id = new Buffer('aaaabbbbccccddddeeeeaaaabbbbccccddddeeee', 'hex')
     var client = krpc({
       ipv6: ipv6,
-      nodes: ['localhost:' + server.address().port]
+      nodes: [localHost(ipv6) + ':' + server.address().port]
     })
 
     client.closest(id, {q: 'echo', a: {hello: 42}}, onreply, function (err, n) {
@@ -26,7 +36,7 @@ function genericQuery (t, ipv6) {
     })
 
     function onreply (message, node) {
-      t.same(node.address, ipv6 ? '::1' : '127.0.0.1')
+      t.same(node.address, localHost(ipv6, true))
       t.same(node.port, server.address().port)
       t.same(message.r.hello, 42)
     }
@@ -56,7 +66,7 @@ function genericClosest (t, ipv6) {
   server.on('query', function (query, peer) {
     t.same(query.q.toString(), 'echo')
     t.same(query.a.hello, 42)
-    server.response(peer, query, {hello: 42}, [{host: ipv6 ? '::1' : '127.0.0.1', port: other.address().port, id: other.id}])
+    server.response(peer, query, {hello: 42}, [{host: localHost(ipv6, true), port: other.address().port, id: other.id}])
   })
 
   other.bind(0, function () {
@@ -65,7 +75,7 @@ function genericClosest (t, ipv6) {
       var id = new Buffer('aaaabbbbccccddddeeeeaaaabbbbccccddddeeee', 'hex')
       var client = krpc({
         ipv6: ipv6,
-        nodes: ['localhost:' + server.address().port]
+        nodes: [localHost(ipv6) + ':' + server.address().port]
       })
 
       client.closest(id, {q: 'echo', a: {hello: 42}}, onreply, function (err, n) {

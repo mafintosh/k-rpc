@@ -303,8 +303,8 @@ RPC.prototype._encodeIP = function (addr, buf, offset, ipv6) {
   return (ipv6 ? encodeipv6 : encodeipv4)(addr, buf, offset)
 }
 
-RPC.prototype._parseIP = function (buf, offset) {
-  return (this.ipv6 ? parseIpv6 : parseIpv4)(buf, offset)
+function _parseIP(buf, offset, ipv6) {
+  return (ipv6 ? parseIpv6 : parseIpv4)(buf, offset)
 }
 
 function parseIpv4 (buf, offset) {
@@ -348,7 +348,11 @@ function encodeipv6(addr, buf, offset) {
   // Address6.toByteArray only creates as large of an array as necessary
   // Since the DHT protocol requires full-length IPv6 addresses, we padd
   // the buffer with enough zero bytes to make it 16 bytes long.
-  var addrBuf = Buffer.from(new Address6(addr).toByteArray());
+  var myAddr = new Address6(addr)
+  if (!myAddr.valid) {
+    throw new Error("Blah")
+  }
+  var addrBuf = Buffer.from(myAddr.toByteArray());
   var finalBuf = Buffer.concat([Buffer.alloc(16 - addrBuf.length), addrBuf]);
   finalBuf.copy(buf, offset);
   return offset + 16;
@@ -372,20 +376,16 @@ function parseNodes (buf, ipv6) {
   var base = 22; // 20 byte node id + 2 byte port
   var step = base + (ipv6 ? 16 : 4); // 16 byte ipv6 address or 4 byte ipv4 address
 
-  try {
-    for (var i = 0; i < buf.length; i += step) {
-      var port = buf.readUInt16BE(i + (step - 2))
-      if (!port) continue
-      contacts.push({
-        id: buf.slice(i, i + 20),
-        host: this._parseIP(buf, i + 20),
-        port: port,
-        distance: 0,
-        token: null
-      })
-    }
-  } catch (err) {
-    // do nothing
+  for (var i = 0; i < buf.length; i += step) {
+    var port = buf.readUInt16BE(i + (step - 2))
+    if (!port) continue
+    contacts.push({
+                    id: buf.slice(i, i + 20),
+                    host: _parseIP(buf, i + 20, ipv6),
+                    port: port,
+                    distance: 0,
+                    token: null
+                  })
   }
 
   return contacts
@@ -399,6 +399,9 @@ function parsePeer (peer, ipv6) {
   if (typeof peer === 'string') {
     if (ipv6) {
       var parsed = Address6.fromURL(peer)
+      if (parsed.address.error) {
+        throw new Error(parsed.address.error)
+      }
       return {host: parsed.address.correctForm(), port: parsed.port}
     }
     return {host: peer.split(':')[0], port: Number(peer.split(':')[1])}
