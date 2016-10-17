@@ -7,7 +7,7 @@ var util = require('util')
 var Address6 = require('ip-address').Address6
 
 var K = 20
-var MAX_CONCURRENCY = 1
+var MAX_CONCURRENCY = 16
 var BOOTSTRAP_NODES = [
   {host: 'router.bittorrent.com', port: 6881},
   {host: 'router.d.com', port: 6881},
