@@ -1,17 +1,7 @@
 var krpc = require('./')
 var tape = require('tape')
 
-function localHost(ipv6, plainIpv6) {
-  if (ipv6) {
-    if (!plainIpv6) {
-      return '[::1]'
-    }
-    return '::1'
-  }
-  return '127.0.0.1'
-}
-
-function genericQuery (t, ipv6) {
+wrapTest(tape, 'query + reply', function (t, ipv6) {
   var server = krpc({ipv6: ipv6})
 
   server.on('query', function (query, peer) {
@@ -41,17 +31,9 @@ function genericQuery (t, ipv6) {
       t.same(message.r.hello, 42)
     }
   })
-}
-
-tape('ipv4 query + reply', function (t) {
-  genericQuery(t, false)
 })
 
-tape('ipv6 query + reply', function (t) {
-  genericQuery(t, true)
-})
-
-function genericClosest (t, ipv6) {
+wrapTest(tape, 'query + closest', function(t, ipv6) {
   var server = krpc({ipv6: ipv6})
   var other = krpc({ipv6: ipv6})
   var visitedOther = false
@@ -95,12 +77,27 @@ function genericClosest (t, ipv6) {
       }
     })
   })
+})
+
+function localHost(ipv6, plainIpv6) {
+  if (ipv6) {
+    if (!plainIpv6) {
+      return '[::1]'
+    }
+    return '::1'
+  }
+  return '127.0.0.1'
 }
 
-tape('ipv4 query + closest', function (t) {
-  genericClosest(t, false)
-})
+function wrapTest(test, str, func) {
+  test('ipv4 ' + str, function (t) {
+    func(t, false)
+    if (t._plan) {
+      t.plan(t._plan + 1)
+    }
 
-tape('ipv6 query + closest', function (t) {
-  genericClosest(t, true)
-})
+    t.test('ipv6 ' + str, function (newT) {
+      func(newT, true)
+    })
+  })
+}
