@@ -100,13 +100,15 @@ RPC.prototype.response = function (node, query, response, nodes, cb) {
   var want = query.want;
   if (!want) want = [this.ipv6 ? 'n6' : 'n4']
 
+  if (want.indexOf('n4') != -1) {
+    response.nodes = []
+  }
+  if (want.indexOf('n6') != -1) {
+    response.nodes6 = []
+  }
+
   if (nodes) {
-    if (want.indexOf('n4') != -1) {
-      response.nodes = this._encodeNodes(nodes, false)
-    }
-    if (want.indexOf('n6') != -1) {
-      response.nodes6 = this._encodeNodes(nodes, true)
-    }
+    response[this.ipv6 ? 'nodes6' : 'nodes'] = this._encodeNodes(nodes)
   }
 
   this.socket.response(node, query, response, cb)
@@ -151,6 +153,7 @@ RPC.prototype.queryAll = function (nodes, message, visit, cb) {
 
 RPC.prototype.query = function (node, message, cb) {
   if (this.socket.inflight >= this.concurrency) {
+    this.socket.checkHostProtocol(node.host)
     this.pending.push([node, message, cb])
   } else {
     if (!message.a) message.a = {}
@@ -191,9 +194,15 @@ RPC.prototype.closest = function (target, message, visit, cb) {
 }
 
 RPC.prototype._addNode = function (node) {
+  this.socket.checkHostProtocol(node.host)
   var old = this.nodes.get(node.id)
   this.nodes.add(node)
   if (!old) this.emit('node', node)
+}
+
+RPC.prototype.addNode = function(node) {
+  this.socket.checkHostProtocol(node.host)
+  this.nodes.add(node);
 }
 
 RPC.prototype._closest = function (target, message, background, visit, cb) {
@@ -315,9 +324,9 @@ function parseIpv6(buf, offset) {
   return Address6.fromByteArray(buf.slice(offset, offset + 16)).correctForm(); // Returns shortest possible form (e.g. '::1')
 }
 
-RPC.prototype._encodeNodes = function (nodes, ipv6) {
+RPC.prototype._encodeNodes = function (nodes) {
   var base = 22; // 20 byte node id + 2 byte port
-  var size = base + (ipv6 ? 16 : 4); // 16 byte ipv6 address or 4 byte ipv4 address
+  var size = base + (this.ipv6 ? 16 : 4); // 16 byte ipv6 address or 4 byte ipv4 address
 
   var buf = Buffer.alloc(nodes.length * size);
   var ptr = 0
@@ -329,7 +338,7 @@ RPC.prototype._encodeNodes = function (nodes, ipv6) {
     node.id.copy(buf, ptr)
     ptr += 20
     var ip = (node.host || node.address)
-    ptr = this._encodeIP(ip, buf, ptr, ipv6);
+    ptr = this._encodeIP(ip, buf, ptr, this.ipv6);
     buf.writeUInt16BE(node.port, ptr)
     ptr += 2
   }
@@ -354,9 +363,13 @@ function encodeipv6(addr, buf, offset) {
     err.message;
   }
   if (!myAddr.valid) {
-    throw new Error("Blah")
+    throw new Error("Invalid address: " + addr)
   }
   var addrBuf = Buffer.from(myAddr.toByteArray());
+  if (addrBuf.length == 17) {
+    addrBuf = addrBuf.slice(1); // Work around bug in 'ip-address' where an extra leading zero is prepended
+  }
+
   var finalBuf = Buffer.concat([Buffer.alloc(16 - addrBuf.length), addrBuf]);
   finalBuf.copy(buf, offset);
   return offset + 16;
