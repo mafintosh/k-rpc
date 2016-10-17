@@ -10,7 +10,7 @@ var K = 20
 var MAX_CONCURRENCY = 16
 var BOOTSTRAP_NODES = [
   {host: 'router.bittorrent.com', port: 6881},
-  {host: 'router.d.com', port: 6881},
+  {host: 'router.utorrent.com', port: 6881},
   {host: 'dht.transmissionbt.com', port: 6881}
 ]
 

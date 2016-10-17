@@ -14,7 +14,7 @@
     "tape": "^4.4.0"
   },
   "scripts": {
-    "test": "standard && node $NODE_DEBUG_OPTION test.js"
+    "test": "standard && node test.js"
   },
   "repository": {
     "type": "git",
