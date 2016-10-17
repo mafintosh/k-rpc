@@ -33,7 +33,7 @@ wrapTest(tape, 'query + reply', function (t, ipv6) {
   })
 })
 
-wrapTest(tape, 'query + closest', function(t, ipv6) {
+wrapTest(tape, 'query + closest', function (t, ipv6) {
   var server = krpc({ipv6: ipv6})
   var other = krpc({ipv6: ipv6})
   var visitedOther = false
@@ -79,7 +79,7 @@ wrapTest(tape, 'query + closest', function(t, ipv6) {
   })
 })
 
-function localHost(ipv6, plainIpv6) {
+function localHost (ipv6, plainIpv6) {
   if (ipv6) {
     if (!plainIpv6) {
       return '[::1]'
@@ -89,7 +89,7 @@ function localHost(ipv6, plainIpv6) {
   return '127.0.0.1'
 }
 
-function wrapTest(test, str, func) {
+function wrapTest (test, str, func) {
   test('ipv4 ' + str, function (t) {
     func(t, false)
     if (t._plan) {

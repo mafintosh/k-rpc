@@ -4,7 +4,7 @@ var equals = require('buffer-equals')
 var crypto = require('crypto')
 var events = require('events')
 var util = require('util')
-var Address6 = require('ip-address').Address6;
+var Address6 = require('ip-address').Address6
 
 var K = 20
 var MAX_CONCURRENCY = 1
@@ -97,13 +97,13 @@ RPC.prototype.response = function (node, query, response, nodes, cb) {
   }
 
   if (!response.id) response.id = this.id
-  var want = query.want;
+  var want = query.want
   if (!want) want = [this.ipv6 ? 'n6' : 'n4']
 
-  if (want.indexOf('n4') != -1) {
+  if (want.indexOf('n4') !== -1) {
     response.nodes = []
   }
-  if (want.indexOf('n6') != -1) {
+  if (want.indexOf('n6') !== -1) {
     response.nodes6 = []
   }
 
@@ -158,7 +158,7 @@ RPC.prototype.query = function (node, message, cb) {
   } else {
     if (!message.a) message.a = {}
     if (!message.a.id) message.a.id = this.id
-    if (!message.want) message.want = ['n6'];
+    if (!message.want) message.want = ['n6']
     if (node.token) message.a.token = node.token
     this.socket.query(node, message, cb)
   }
@@ -200,9 +200,9 @@ RPC.prototype._addNode = function (node) {
   if (!old) this.emit('node', node)
 }
 
-RPC.prototype.addNode = function(node) {
+RPC.prototype.addNode = function (node) {
   this.socket.checkHostProtocol(node.host)
-  this.nodes.add(node);
+  this.nodes.add(node)
 }
 
 RPC.prototype._closest = function (target, message, background, visit, cb) {
@@ -293,7 +293,7 @@ RPC.prototype._closest = function (target, message, background, visit, cb) {
       })
     }
 
-    var nodesResp = self.ipv6 ? r.nodes6 : r.nodes;
+    var nodesResp = self.ipv6 ? r.nodes6 : r.nodes
     var nodes = nodesResp ? self.parseNodes(nodesResp, self.ipv6) : []
     for (var i = 0; i < nodes.length; i++) add(nodes[i])
 
@@ -312,7 +312,7 @@ RPC.prototype._encodeIP = function (addr, buf, offset, ipv6) {
   return (ipv6 ? encodeipv6 : encodeipv4)(addr, buf, offset)
 }
 
-RPC.prototype._parseIP = function(buf, offset, ipv6) {
+RPC.prototype._parseIP = function (buf, offset, ipv6) {
   return (ipv6 ? parseIpv6 : parseIpv4)(buf, offset)
 }
 
@@ -320,15 +320,15 @@ function parseIpv4 (buf, offset) {
   return buf[offset++] + '.' + buf[offset++] + '.' + buf[offset++] + '.' + buf[offset++]
 }
 
-function parseIpv6(buf, offset) {
-  return Address6.fromByteArray(buf.slice(offset, offset + 16)).correctForm(); // Returns shortest possible form (e.g. '::1')
+function parseIpv6 (buf, offset) {
+  return Address6.fromByteArray(buf.slice(offset, offset + 16)).correctForm() // Returns shortest possible form (e.g. '::1')
 }
 
 RPC.prototype._encodeNodes = function (nodes) {
-  var base = 22; // 20 byte node id + 2 byte port
-  var size = base + (this.ipv6 ? 16 : 4); // 16 byte ipv6 address or 4 byte ipv4 address
+  var base = 22 // 20 byte node id + 2 byte port
+  var size = base + (this.ipv6 ? 16 : 4) // 16 byte ipv6 address or 4 byte ipv4 address
 
-  var buf = Buffer.alloc(nodes.length * size);
+  var buf = Buffer.alloc(nodes.length * size)
   var ptr = 0
 
   for (var i = 0; i < nodes.length; i++) {
@@ -338,7 +338,7 @@ RPC.prototype._encodeNodes = function (nodes) {
     node.id.copy(buf, ptr)
     ptr += 20
     var ip = (node.host || node.address)
-    ptr = this._encodeIP(ip, buf, ptr, this.ipv6);
+    ptr = this._encodeIP(ip, buf, ptr, this.ipv6)
     buf.writeUInt16BE(node.port, ptr)
     ptr += 2
   }
@@ -350,29 +350,29 @@ RPC.prototype._encodeNodes = function (nodes) {
 function encodeipv4 (addr, buf, offset) {
   var ip = addr.split('.')
   for (var j = 0; j < 4; j++) buf[offset++] = parseInt(ip[j] || 0, 10)
-  return offset;
+  return offset
 }
 
-function encodeipv6(addr, buf, offset) {
+function encodeipv6 (addr, buf, offset) {
   // Address6.toByteArray only creates as large of an array as necessary
   // Since the DHT protocol requires full-length IPv6 addresses, we padd
   // the buffer with enough zero bytes to make it 16 bytes long.
   try {
     var myAddr = new Address6(addr)
   } catch (err) {
-    err.message;
+    err.message
   }
   if (!myAddr.valid) {
-    throw new Error("Invalid address: " + addr)
+    throw new Error('Invalid address: ' + addr)
   }
-  var addrBuf = Buffer.from(myAddr.toByteArray());
-  if (addrBuf.length == 17) {
-    addrBuf = addrBuf.slice(1); // Work around bug in 'ip-address' where an extra leading zero is prepended
+  var addrBuf = Buffer.from(myAddr.toByteArray())
+  if (addrBuf.length === 17) {
+    addrBuf = addrBuf.slice(1) // Work around bug in 'ip-address' where an extra leading zero is prepended
   }
 
-  var finalBuf = Buffer.concat([Buffer.alloc(16 - addrBuf.length), addrBuf]);
-  finalBuf.copy(buf, offset);
-  return offset + 16;
+  var finalBuf = Buffer.concat([Buffer.alloc(16 - addrBuf.length), addrBuf])
+  finalBuf.copy(buf, offset)
+  return offset + 16
 }
 
 function toBootstrapArray (ipv6, val) {
@@ -380,36 +380,32 @@ function toBootstrapArray (ipv6, val) {
 
   var nodes = ipv6 ? BOOTSTRAP_NODES_IPV6 : BOOTSTRAP_NODES
   if (val === true) return nodes
-  return [].concat(val || nodes).map(function(p) { return parsePeer(p, ipv6) })
+  return [].concat(val || nodes).map(function (p) { return parsePeer(p, ipv6) })
 }
 
 function isNodeId (id) {
   return id && Buffer.isBuffer(id) && id.length === 20
 }
 
-RPC.prototype.parseNodes = function(buf, ipv6) {
+RPC.prototype.parseNodes = function (buf, ipv6) {
   var contacts = []
 
-  var base = 22; // 20 byte node id + 2 byte port
-  var step = base + (ipv6 ? 16 : 4); // 16 byte ipv6 address or 4 byte ipv4 address
+  var base = 22 // 20 byte node id + 2 byte port
+  var step = base + (ipv6 ? 16 : 4) // 16 byte ipv6 address or 4 byte ipv4 address
 
   for (var i = 0; i < buf.length; i += step) {
     var port = buf.readUInt16BE(i + (step - 2))
     if (!port) continue
     contacts.push({
-                    id: buf.slice(i, i + 20),
-                    host: this._parseIP(buf, i + 20, ipv6),
-                    port: port,
-                    distance: 0,
-                    token: null
-                  })
+      id: buf.slice(i, i + 20),
+      host: this._parseIP(buf, i + 20, ipv6),
+      port: port,
+      distance: 0,
+      token: null
+    })
   }
 
   return contacts
-}
-
-function parseNodeipv4(buf, offset) {
-  return buf.slice(offset)
 }
 
 function parsePeer (peer, ipv6) {
