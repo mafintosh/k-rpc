@@ -32,6 +32,7 @@ function RPC (opts) {
   this.pending = []
   this.nodes = null
 
+  this.socket.setMaxListeners(0)
   this.socket.on('query', onquery)
   this.socket.on('response', onresponse)
   this.socket.on('warning', onwarning)
