@@ -1,8 +1,8 @@
 var krpc = require('./')
 var tape = require('tape')
 
-tape('query + reply', function (t) {
-  var server = krpc()
+wrapTest(tape, 'query + reply', function (t, ipv6) {
+  var server = krpc({ipv6: ipv6})
 
   server.on('query', function (query, peer) {
     t.same(query.q.toString(), 'echo')
@@ -13,7 +13,8 @@ tape('query + reply', function (t) {
   server.bind(0, function () {
     var id = new Buffer('aaaabbbbccccddddeeeeaaaabbbbccccddddeeee', 'hex')
     var client = krpc({
-      nodes: ['localhost:' + server.address().port]
+      ipv6: ipv6,
+      nodes: [localHost(ipv6) + ':' + server.address().port]
     })
 
     client.closest(id, {q: 'echo', a: {hello: 42}}, onreply, function (err, n) {
@@ -25,16 +26,16 @@ tape('query + reply', function (t) {
     })
 
     function onreply (message, node) {
-      t.same(node.address, '127.0.0.1')
+      t.same(node.address, localHost(ipv6, true))
       t.same(node.port, server.address().port)
       t.same(message.r.hello, 42)
     }
   })
 })
 
-tape('query + closest', function (t) {
-  var server = krpc()
-  var other = krpc()
+wrapTest(tape, 'query + closest', function (t, ipv6) {
+  var server = krpc({ipv6: ipv6})
+  var other = krpc({ipv6: ipv6})
   var visitedOther = false
 
   other.on('query', function (query, peer) {
@@ -47,7 +48,7 @@ tape('query + closest', function (t) {
   server.on('query', function (query, peer) {
     t.same(query.q.toString(), 'echo')
     t.same(query.a.hello, 42)
-    server.response(peer, query, {hello: 42}, [{host: '127.0.0.1', port: other.address().port, id: other.id}])
+    server.response(peer, query, {hello: 42}, [{host: localHost(ipv6, true), port: other.address().port, id: other.id}])
   })
 
   other.bind(0, function () {
@@ -55,7 +56,8 @@ tape('query + closest', function (t) {
       var replies = 2
       var id = new Buffer('aaaabbbbccccddddeeeeaaaabbbbccccddddeeee', 'hex')
       var client = krpc({
-        nodes: ['localhost:' + server.address().port]
+        ipv6: ipv6,
+        nodes: [localHost(ipv6) + ':' + server.address().port]
       })
 
       client.closest(id, {q: 'echo', a: {hello: 42}}, onreply, function (err, n) {
@@ -76,3 +78,26 @@ tape('query + closest', function (t) {
     })
   })
 })
+
+function localHost (ipv6, plainIpv6) {
+  if (ipv6) {
+    if (!plainIpv6) {
+      return '[::1]'
+    }
+    return '::1'
+  }
+  return '127.0.0.1'
+}
+
+function wrapTest (test, str, func) {
+  test('ipv4 ' + str, function (t) {
+    func(t, false)
+    if (t._plan) {
+      t.plan(t._plan + 1)
+    }
+
+    t.test('ipv6 ' + str, function (newT) {
+      func(newT, true)
+    })
+  })
+}
