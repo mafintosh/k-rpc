@@ -1,8 +1,8 @@
 var socket = require('k-rpc-socket')
 var KBucket = require('k-bucket')
 var equals = require('buffer-equals')
-var crypto = require('crypto')
 var events = require('events')
+var randombytes = require('randombytes')
 var util = require('util')
 var Buffer = require('safe-buffer').Buffer
 
@@ -22,7 +22,7 @@ function RPC (opts) {
 
   var self = this
 
-  this.id = toBuffer(opts.id || opts.nodeId || crypto.randomBytes(20))
+  this.id = toBuffer(opts.id || opts.nodeId || randombytes(20))
   this.socket = socket(opts)
   this.bootstrap = toBootstrapArray(opts.nodes || opts.bootstrap)
   this.concurrency = opts.concurrency || MAX_CONCURRENCY
