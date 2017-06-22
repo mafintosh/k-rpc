@@ -1,7 +1,7 @@
 var krpc = require('./')
 var rpc = krpc()
 
-var target = new Buffer('aaaabbbbccccddddeeeeffffaaaabbbbccccdddd', 'hex')
+var target = Buffer.from('aaaabbbbccccddddeeeeffffaaaabbbbccccdddd', 'hex')
 
 rpc.on('query', function (query, peer) {
   // console.log(query, peer)

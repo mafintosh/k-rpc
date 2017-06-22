@@ -4,6 +4,7 @@ var equals = require('buffer-equals')
 var crypto = require('crypto')
 var events = require('events')
 var util = require('util')
+var Buffer = require('safe-buffer').Buffer
 
 var K = 20
 var MAX_CONCURRENCY = 16
@@ -292,7 +293,7 @@ function isNodeId (id) {
 }
 
 function encodeNodes (nodes) {
-  var buf = new Buffer(nodes.length * 26)
+  var buf = Buffer.allocUnsafe(nodes.length * 26)
   var ptr = 0
 
   for (var i = 0; i < nodes.length; i++) {
@@ -344,7 +345,7 @@ function parsePeer (peer) {
 function noop () {}
 
 function toBuffer (str) {
-  if (typeof str === 'string') return new Buffer(str, 'hex')
+  if (typeof str === 'string') return Buffer.from(str, 'hex')
   if (Buffer.isBuffer(str)) return str
   throw new Error('Pass a buffer or a string')
 }
