@@ -1,5 +1,6 @@
 var krpc = require('./')
 var tape = require('tape')
+var Buffer = require('safe-buffer').Buffer
 
 tape('query + reply', function (t) {
   var server = krpc()
@@ -53,7 +54,7 @@ tape('query + closest', function (t) {
   other.bind(0, function () {
     server.bind(0, function () {
       var replies = 2
-      var id = new Buffer('aaaabbbbccccddddeeeeaaaabbbbccccddddeeee', 'hex')
+      var id = Buffer.from('aaaabbbbccccddddeeeeaaaabbbbccccddddeeee', 'hex')
       var client = krpc({
         nodes: ['localhost:' + server.address().port]
       })
