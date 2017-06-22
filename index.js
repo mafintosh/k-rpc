@@ -101,8 +101,9 @@ RPC.prototype.error = function (node, query, error, cb) {
   this.socket.error(node, query, error, cb)
 }
 
-RPC.prototype.bind = function (port, cb) {
-  this.socket.bind(port, cb)
+// bind([port], [address], [callback])
+RPC.prototype.bind = function () {
+  this.socket.bind.apply(this.socket, arguments)
 }
 
 RPC.prototype.address = function () {
