@@ -48,6 +48,8 @@ Create a new rpc instance. Options include
   k: 20,
   // the local node id. defaults to 20 random bytes
   id: Buffer(...),
+  // Length of ID in bytes, defaults to 20 (sha1)
+  idLength: 20,
   // optional k-rpc-socket instance
   krpcSocket: krpcSocket(opts)
 }

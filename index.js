@@ -22,7 +22,8 @@ function RPC (opts) {
 
   var self = this
 
-  this.id = toBuffer(opts.id || opts.nodeId || randombytes(20))
+  this._idLength = opts.idLength || 20
+  this.id = toBuffer(opts.id || opts.nodeId || randombytes(this._idLength))
   this.socket = opts.krpcSocket || socket(opts)
   this.bootstrap = toBootstrapArray(opts.nodes || opts.bootstrap)
   this.concurrency = opts.concurrency || MAX_CONCURRENCY
@@ -73,7 +74,7 @@ function RPC (opts) {
   }
 
   function addNode (data, peer) {
-    if (data && isNodeId(data.id) && !self.nodes.get(data.id)) {
+    if (data && isNodeId(data.id, self._idLength) && !self.nodes.get(data.id)) {
       self._addNode({
         id: data.id,
         host: peer.address || peer.host,
@@ -93,7 +94,7 @@ RPC.prototype.response = function (node, query, response, nodes, cb) {
   }
 
   if (!response.id) response.id = this.id
-  if (nodes) response.nodes = encodeNodes(nodes)
+  if (nodes) response.nodes = encodeNodes(nodes, this._idLength)
   this.socket.response(node, query, response, cb)
 }
 
@@ -259,7 +260,7 @@ RPC.prototype._closest = function (target, message, background, visit, cb) {
       if (err && err.code === 'ETIMEDOUT') self.nodes.remove(peer.id)
     }
 
-    if (!err && isNodeId(r.id)) {
+    if (!err && isNodeId(r.id, self._idLength)) {
       count++
       add({
         id: r.id,
@@ -269,7 +270,7 @@ RPC.prototype._closest = function (target, message, background, visit, cb) {
       })
     }
 
-    var nodes = r.nodes ? parseNodes(r.nodes) : []
+    var nodes = r.nodes ? parseNodes(r.nodes, self._idLength) : []
     for (var i = 0; i < nodes.length; i++) add(nodes[i])
 
     if (visit && visit(res, peer) === false) stop = true
@@ -289,19 +290,19 @@ function toBootstrapArray (val) {
   return [].concat(val || BOOTSTRAP_NODES).map(parsePeer)
 }
 
-function isNodeId (id) {
-  return id && Buffer.isBuffer(id) && id.length === 20
+function isNodeId (id, idLength) {
+  return id && Buffer.isBuffer(id) && id.length === idLength
 }
 
-function encodeNodes (nodes) {
-  var buf = Buffer.allocUnsafe(nodes.length * 26)
+function encodeNodes (nodes, idLength) {
+  var buf = Buffer.allocUnsafe(nodes.length * (idLength + 6))
   var ptr = 0
 
   for (var i = 0; i < nodes.length; i++) {
     var node = nodes[i]
-    if (!isNodeId(node.id)) continue
+    if (!isNodeId(node.id, idLength)) continue
     node.id.copy(buf, ptr)
-    ptr += 20
+    ptr += idLength
     var ip = (node.host || node.address).split('.')
     for (var j = 0; j < 4; j++) buf[ptr++] = parseInt(ip[j] || 0, 10)
     buf.writeUInt16BE(node.port, ptr)
@@ -312,16 +313,16 @@ function encodeNodes (nodes) {
   return buf.slice(0, ptr)
 }
 
-function parseNodes (buf) {
+function parseNodes (buf, idLength) {
   var contacts = []
 
   try {
-    for (var i = 0; i < buf.length; i += 26) {
-      var port = buf.readUInt16BE(i + 24)
+    for (var i = 0; i < buf.length; i += (idLength + 6)) {
+      var port = buf.readUInt16BE(i + (idLength + 4))
       if (!port) continue
       contacts.push({
-        id: buf.slice(i, i + 20),
-        host: parseIp(buf, i + 20),
+        id: buf.slice(i, i + idLength),
+        host: parseIp(buf, i + idLength),
         port: port,
         distance: 0,
         token: null
