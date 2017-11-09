@@ -47,7 +47,9 @@ Create a new rpc instance. Options include
   // how big should be routing buckets be. defaults to 20.
   k: 20,
   // the local node id. defaults to 20 random bytes
-  id: Buffer(...)
+  id: Buffer(...),
+  // optional k-rpc-socket instance
+  krpcSocket: krpcSocket(opts)
 }
 ```
 
