@@ -23,7 +23,7 @@ function RPC (opts) {
   var self = this
 
   this.id = toBuffer(opts.id || opts.nodeId || crypto.randomBytes(20))
-  this.socket = socket(opts)
+  this.socket = opts.krpcSocket || socket(opts)
   this.bootstrap = toBootstrapArray(opts.nodes || opts.bootstrap)
   this.concurrency = opts.concurrency || MAX_CONCURRENCY
   this.backgroundConcurrency = opts.backgroundConcurrency || (this.concurrency / 4) | 0
