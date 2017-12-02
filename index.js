@@ -23,6 +23,8 @@ function RPC (opts) {
   var self = this
 
   this._idLength = opts.idLength || 20
+  this._byAddr = null
+
   this.id = toBuffer(opts.id || opts.nodeId || randombytes(this._idLength))
   this.socket = opts.krpcSocket || socket(opts)
   this.bootstrap = toBootstrapArray(opts.nodes || opts.bootstrap)
@@ -155,6 +157,7 @@ RPC.prototype.destroy = function (cb) {
 RPC.prototype.clear = function () {
   var self = this
 
+  this._byAddr = {}
   this.nodes = new KBucket({
     localNodeId: this.id,
     numberOfNodesPerKBucket: this.k,
@@ -162,6 +165,23 @@ RPC.prototype.clear = function () {
   })
 
   this.nodes.on('ping', onping)
+  this.nodes.on('added', onadd)
+  this.nodes.on('removed', onremove)
+
+  function onadd (node) {
+    var addr = node.host + ':' + node.port
+    var old = self._byAddr[addr]
+
+    if (old && !equals(old.id, node.id)) {
+      self.emit('duplicate-host', node, old)
+    }
+
+    self._byAddr[addr] = node
+  }
+
+  function onremove (node) {
+    delete self._byAddr[node.host + ':' + node.port]
+  }
 
   function onping (older, newer) {
     self.emit('ping', older, newer)
