@@ -56,7 +56,7 @@ tape('query + closest', function (t) {
       var replies = 2
       var id = Buffer.from('aaaabbbbccccddddeeeeaaaabbbbccccddddeeee', 'hex')
       var client = krpc({
-        nodes: ['localhost:' + server.address().port]
+        nodes: ['localhost:' + server.address().port, 'localhost:' + other.address().port]
       })
 
       client.closest(id, {q: 'echo', a: {hello: 42}}, onreply, function (err, n) {
