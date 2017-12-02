@@ -74,7 +74,7 @@ function RPC (opts) {
   }
 
   function addNode (data, peer) {
-    if (data && isNodeId(data.id, self._idLength) && !self.nodes.get(data.id)) {
+    if (data && isNodeId(data.id, self._idLength) && !self.nodes.get(data.id) && !equals(data.id, self.id)) {
       self._addNode({
         id: data.id,
         host: peer.address || peer.host,
@@ -253,12 +253,14 @@ RPC.prototype._closest = function (target, message, background, visit, cb) {
     pending--
     if (peer) queried[(peer.address || peer.host) + ':' + peer.port] = true // need this for bootstrap nodes
 
-    var r = res && res.r
-    if (!r) return
-
     if (peer && peer.id && self.nodes.get(peer.id)) {
-      if (err && err.code === 'ETIMEDOUT') self.nodes.remove(peer.id)
+      if (err && (err.code === 'EUNEXPECTEDNODE' || err.code === 'ETIMEDOUT')) {
+        self.nodes.remove(peer.id)
+      }
     }
+
+    var r = res && res.r
+    if (!r) return kick()
 
     if (!err && isNodeId(r.id, self._idLength)) {
       count++
