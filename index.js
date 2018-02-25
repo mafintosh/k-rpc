@@ -350,6 +350,7 @@ function noop () {}
 
 function toBuffer (str) {
   if (typeof str === 'string') return Buffer.from(str, 'hex')
+  if (ArrayBuffer.isView(str)) return Buffer.from(str.buffer, str.byteOffset, str.byteLength)
   if (Buffer.isBuffer(str)) return str
   throw new Error('Pass a buffer or a string')
 }
