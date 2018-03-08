@@ -349,8 +349,8 @@ function parsePeer (peer) {
 function noop () {}
 
 function toBuffer (str) {
-  if (typeof str === 'string') return Buffer.from(str, 'hex')
-  if (ArrayBuffer.isView(str)) return Buffer.from(str.buffer, str.byteOffset, str.byteLength)
   if (Buffer.isBuffer(str)) return str
+  if (ArrayBuffer.isView(str)) return Buffer.from(str.buffer, str.byteOffset, str.byteLength)
+  if (typeof str === 'string') return Buffer.from(str, 'hex')
   throw new Error('Pass a buffer or a string')
 }
