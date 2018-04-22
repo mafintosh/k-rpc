@@ -74,12 +74,18 @@ function RPC (opts) {
   }
 
   function addNode (data, peer) {
-    if (data && isNodeId(data.id, self._idLength) && !self.nodes.get(data.id) && !equals(data.id, self.id)) {
+    if (data && isNodeId(data.id, self._idLength) && !equals(data.id, self.id)) {
+      var old = self.nodes.get(data.id)
+      if (old) {
+        old.seen = Date.now()
+        return
+      }
       self._addNode({
         id: data.id,
         host: peer.address || peer.host,
         port: peer.port,
-        distance: 0
+        distance: 0,
+        seen: Date.now()
       })
     }
   }
@@ -164,7 +170,11 @@ RPC.prototype.clear = function () {
   this.nodes.on('ping', onping)
 
   function onping (older, newer) {
-    self.emit('ping', older, newer)
+    self.emit('ping', older, function swap (deadNode) {
+      if (!deadNode) return
+      if (deadNode.id) self.nodes.remove(deadNode.id)
+      self._addNode(newer)
+    })
   }
 }
 

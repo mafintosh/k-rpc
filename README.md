@@ -129,6 +129,11 @@ Send a response to a node for a specific query. If you pass in an array of nodes
 
 Send an error response for a query.
 
+#### `rpc.on('ping', oldNodes, swapNew)`
+
+Emitted when the bucket is full. Try and `oldNodes` and if one
+of them fails call `swapNew` with that node to swap if for a newer one
+
 ## License
 
 MIT
