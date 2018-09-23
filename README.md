@@ -13,10 +13,10 @@ Read [BEP 5](http://www.bittorrent.org/beps/bep_0005.html) and [BEP 44](http://w
 ## Usage
 
 ``` js
-var krpc = require('k-rpc')
-var rpc = krpc()
+const krpc = require('k-rpc')
+const rpc = new krpc();
 
-var target = new Buffer('aaaabbbbccccddddeeeeffffaaaabbbbccccdddd', 'hex')
+const target = Buffer.from('aaaabbbbccccddddeeeeffffaaaabbbbccccdddd', 'hex');
 
 // query the BitTorrent DHT to find nodes near the target buffer
 rpc.closest(target, {q: 'get_peers', a: {info_hash: target}}, onreply, done)
@@ -32,7 +32,7 @@ function done () {
 
 ## API
 
-#### `var rpc = krpc([options])`
+#### `const rpc = krpc([options])`
 
 Create a new rpc instance. Options include
 
@@ -69,7 +69,7 @@ Populate the `rpc.nodes` routing table with nodes discovered by looking for othe
 
 ``` js
 // send a find_node query
-rpc.populate(rpc.id, {q: 'find_node', a: {id: rpc.id, target: rpc.id}}, function () {
+rpc.populate(rpc.id, {q: 'find_node', a: {id: rpc.id, target: rpc.id}}, () => {
   console.log('internal routing table fully populated')
 })
 ```
@@ -83,7 +83,7 @@ Find peers close the specified target buffer whilst sending the specified query.
 
 ``` js
 // find peers sharing a torrent info_hash
-rpc.closest(infoHash, {q: 'get_peers', a: {id: rpc.id: info_hash: infoHash}}, onreply, function () {
+rpc.closest(infoHash, {q: 'get_peers', a: {id: rpc.id: info_hash: infoHash}}, onreply, () => {
   console.log('no more peers to be found')
 })
 
