@@ -5,7 +5,7 @@
   "main": "index.js",
   "dependencies": {
     "buffer-equals": "^1.0.3",
-    "k-bucket": "^4.0.0",
+    "k-bucket": "^5.0.0",
     "k-rpc-socket": "^1.7.2",
     "randombytes": "^2.0.5",
     "safe-buffer": "^5.1.1"
