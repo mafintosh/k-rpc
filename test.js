@@ -1,23 +1,23 @@
-var krpc = require('./')
-var tape = require('tape')
-var Buffer = require('safe-buffer').Buffer
+const KRPC = require('./')
+const tape = require('tape')
+const Buffer = require('safe-buffer').Buffer
 
-tape('query + reply', function (t) {
-  var server = krpc()
+tape('query + reply', t => {
+  const server = new KRPC()
 
-  server.on('query', function (query, peer) {
+  server.on('query', (query, peer) => {
     t.same(query.q.toString(), 'echo')
     t.same(query.a.hello, 42)
-    server.response(peer, query, {hello: 42})
+    server.response(peer, query, { hello: 42 })
   })
 
-  server.bind(0, function () {
-    var id = new Buffer('aaaabbbbccccddddeeeeaaaabbbbccccddddeeee', 'hex')
-    var client = krpc({
-      nodes: ['localhost:' + server.address().port]
+  server.bind(0, () => {
+    const id = Buffer.from('aaaabbbbccccddddeeeeaaaabbbbccccddddeeee', 'hex')
+    const client = new KRPC({
+      nodes: [`localhost:${server.address().port}`]
     })
 
-    client.closest(id, {q: 'echo', a: {hello: 42}}, onreply, function (err, n) {
+    client.closest(id, { q: 'echo', a: { hello: 42 } }, onreply, (err, n) => {
       server.destroy()
       client.destroy()
       t.error(err)
@@ -33,33 +33,33 @@ tape('query + reply', function (t) {
   })
 })
 
-tape('query + closest', function (t) {
-  var server = krpc()
-  var other = krpc()
-  var visitedOther = false
+tape('query + closest', t => {
+  const server = new KRPC()
+  const other = new KRPC()
+  let visitedOther = false
 
-  other.on('query', function (query, peer) {
+  other.on('query', (query, peer) => {
     visitedOther = true
     t.same(query.q.toString(), 'echo')
     t.same(query.a.hello, 42)
-    server.response(peer, query, {hello: 42})
+    server.response(peer, query, { hello: 42 })
   })
 
-  server.on('query', function (query, peer) {
+  server.on('query', (query, peer) => {
     t.same(query.q.toString(), 'echo')
     t.same(query.a.hello, 42)
-    server.response(peer, query, {hello: 42}, [{host: '127.0.0.1', port: other.address().port, id: other.id}])
+    server.response(peer, query, { hello: 42 }, [{ host: '127.0.0.1', port: other.address().port, id: other.id }])
   })
 
-  other.bind(0, function () {
-    server.bind(0, function () {
-      var replies = 2
-      var id = Buffer.from('aaaabbbbccccddddeeeeaaaabbbbccccddddeeee', 'hex')
-      var client = krpc({
-        nodes: ['localhost:' + server.address().port, 'localhost:' + other.address().port]
+  other.bind(0, () => {
+    server.bind(0, () => {
+      let replies = 2
+      const id = Buffer.from('aaaabbbbccccddddeeeeaaaabbbbccccddddeeee', 'hex')
+      const client = new KRPC({
+        nodes: [`localhost:${server.address().port}`, `localhost:${other.address().port}`]
       })
 
-      client.closest(id, {q: 'echo', a: {hello: 42}}, onreply, function (err, n) {
+      client.closest(id, { q: 'echo', a: { hello: 42 } }, onreply, (err, n) => {
         server.destroy()
         client.destroy()
         other.destroy()

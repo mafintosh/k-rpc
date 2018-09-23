@@ -9,11 +9,11 @@ rpc.on('query', function (query, peer) {
 
 var then = Date.now()
 
-rpc.populate(rpc.id, {q: 'find_node', a: {id: rpc.id, target: rpc.id}}, function () {
+rpc.populate(rpc.id, { q: 'find_node', a: { id: rpc.id, target: rpc.id } }, function () {
   console.log('(populated)', Date.now() - then)
 })
 
-rpc.closest(target, {q: 'get_peers', a: {info_hash: target}}, visit, function (_, n) {
+rpc.closest(target, { q: 'get_peers', a: { info_hash: target } }, visit, function (_, n) {
   console.log('(closest)', Date.now() - then, n)
 })
 
