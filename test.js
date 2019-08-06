@@ -1,6 +1,5 @@
 var krpc = require('./')
 var tape = require('tape')
-var Buffer = require('safe-buffer').Buffer
 
 tape('query + reply', function (t) {
   var server = krpc()
@@ -8,16 +7,16 @@ tape('query + reply', function (t) {
   server.on('query', function (query, peer) {
     t.same(query.q.toString(), 'echo')
     t.same(query.a.hello, 42)
-    server.response(peer, query, {hello: 42})
+    server.response(peer, query, { hello: 42 })
   })
 
   server.bind(0, function () {
-    var id = new Buffer('aaaabbbbccccddddeeeeaaaabbbbccccddddeeee', 'hex')
+    var id = Buffer.from('aaaabbbbccccddddeeeeaaaabbbbccccddddeeee', 'hex')
     var client = krpc({
       nodes: ['localhost:' + server.address().port]
     })
 
-    client.closest(id, {q: 'echo', a: {hello: 42}}, onreply, function (err, n) {
+    client.closest(id, { q: 'echo', a: { hello: 42 } }, onreply, function (err, n) {
       server.destroy()
       client.destroy()
       t.error(err)
@@ -42,13 +41,13 @@ tape('query + closest', function (t) {
     visitedOther = true
     t.same(query.q.toString(), 'echo')
     t.same(query.a.hello, 42)
-    server.response(peer, query, {hello: 42})
+    server.response(peer, query, { hello: 42 })
   })
 
   server.on('query', function (query, peer) {
     t.same(query.q.toString(), 'echo')
     t.same(query.a.hello, 42)
-    server.response(peer, query, {hello: 42}, [{host: '127.0.0.1', port: other.address().port, id: other.id}])
+    server.response(peer, query, { hello: 42 }, [{ host: '127.0.0.1', port: other.address().port, id: other.id }])
   })
 
   other.bind(0, function () {
@@ -59,7 +58,7 @@ tape('query + closest', function (t) {
         nodes: ['localhost:' + server.address().port, 'localhost:' + other.address().port]
       })
 
-      client.closest(id, {q: 'echo', a: {hello: 42}}, onreply, function (err, n) {
+      client.closest(id, { q: 'echo', a: { hello: 42 } }, onreply, function (err, n) {
         server.destroy()
         client.destroy()
         other.destroy()

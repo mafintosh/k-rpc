@@ -1,17 +1,15 @@
 var socket = require('k-rpc-socket')
 var KBucket = require('k-bucket')
-var equals = require('buffer-equals')
 var events = require('events')
 var randombytes = require('randombytes')
 var util = require('util')
-var Buffer = require('safe-buffer').Buffer
 
 var K = 20
 var MAX_CONCURRENCY = 16
 var BOOTSTRAP_NODES = [
-  {host: 'router.bittorrent.com', port: 6881},
-  {host: 'router.utorrent.com', port: 6881},
-  {host: 'dht.transmissionbt.com', port: 6881}
+  { host: 'router.bittorrent.com', port: 6881 },
+  { host: 'router.utorrent.com', port: 6881 },
+  { host: 'dht.transmissionbt.com', port: 6881 }
 ]
 
 module.exports = RPC
@@ -74,7 +72,7 @@ function RPC (opts) {
   }
 
   function addNode (data, peer) {
-    if (data && isNodeId(data.id, self._idLength) && !equals(data.id, self.id)) {
+    if (data && isNodeId(data.id, self._idLength) && !data.id.equals(self.id)) {
       var old = self.nodes.get(data.id)
       if (old) {
         old.seen = Date.now()
@@ -291,7 +289,7 @@ RPC.prototype._closest = function (target, message, background, visit, cb) {
   }
 
   function add (node) {
-    if (equals(node.id, self.id)) return
+    if (node.id.equals(self.id)) return
     table.add(node)
   }
 }
@@ -352,7 +350,7 @@ function parseIp (buf, offset) {
 }
 
 function parsePeer (peer) {
-  if (typeof peer === 'string') return {host: peer.split(':')[0], port: Number(peer.split(':')[1])}
+  if (typeof peer === 'string') return { host: peer.split(':')[0], port: Number(peer.split(':')[1]) }
   return peer
 }
 
