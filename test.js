@@ -11,7 +11,7 @@ tape('query + reply', function (t) {
   })
 
   server.bind(0, function () {
-    var id = new Buffer('aaaabbbbccccddddeeeeaaaabbbbccccddddeeee', 'hex')
+    var id = Buffer.from('aaaabbbbccccddddeeeeaaaabbbbccccddddeeee', 'hex')
     var client = krpc({
       nodes: ['localhost:' + server.address().port]
     })
