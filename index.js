@@ -210,7 +210,7 @@ RPC.prototype._closest = function (target, message, background, visit, cb) {
   })
 
   var evt = background ? 'postupdate' : 'update'
-  this.socket.on(evt, kick)
+  this.socket.once(evt, kick)
   kick()
 
   function kick () {
