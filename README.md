@@ -13,10 +13,10 @@ Read [BEP 5](http://www.bittorrent.org/beps/bep_0005.html) and [BEP 44](http://w
 ## Usage
 
 ``` js
-var krpc = require('k-rpc')
-var rpc = krpc()
+import krpc from 'k-rpc'
+const rpc = new KRPC()
 
-var target = new Buffer('aaaabbbbccccddddeeeeffffaaaabbbbccccdddd', 'hex')
+const target = new Uint8Array(Buffer.from('aaaabbbbccccddddeeeeffffaaaabbbbccccdddd', 'hex'))
 
 // query the BitTorrent DHT to find nodes near the target buffer
 rpc.closest(target, {q: 'get_peers', a: {info_hash: target}}, onreply, done)
@@ -32,7 +32,7 @@ function done () {
 
 ## API
 
-#### `var rpc = krpc([options])`
+#### `const rpc = new KRPC([options])`
 
 Create a new rpc instance. Options include
 

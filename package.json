@@ -1,16 +1,19 @@
 {
   "name": "k-rpc",
-  "version": "5.1.0",
+  "version": "6.0.0",
   "description": "Low-level implementation of the k-rpc protocol used the BitTorrent DHT.",
-  "main": "index.js",
+  "type": "module",
+  "exports": {
+    "import": "./index.js"
+  },
   "dependencies": {
-    "k-bucket": "^5.0.0",
-    "k-rpc-socket": "^1.7.2",
-    "randombytes": "^2.0.5"
+    "k-bucket": "^5.1.0",
+    "k-rpc-socket": "^2.0.0",
+    "uint8-util": "^2.1.7"
   },
   "devDependencies": {
     "standard": "*",
-    "tape": "^4.4.0"
+    "tape": "^5.6.3"
   },
   "scripts": {
     "test": "standard && tape test.js"
