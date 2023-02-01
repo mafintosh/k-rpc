@@ -1,18 +1,18 @@
-var krpc = require('./')
-var tape = require('tape')
+import KRPC from './index.js'
+import tape from 'tape'
 
 tape('query + reply', function (t) {
-  var server = krpc()
+  const server = new KRPC()
 
   server.on('query', function (query, peer) {
-    t.same(query.q.toString(), 'echo')
+    t.same(Buffer.from(query.q).toString(), 'echo')
     t.same(query.a.hello, 42)
     server.response(peer, query, { hello: 42 })
   })
 
   server.bind(0, function () {
-    var id = Buffer.from('aaaabbbbccccddddeeeeaaaabbbbccccddddeeee', 'hex')
-    var client = krpc({
+    const id = new Uint8Array(Buffer.from('aaaabbbbccccddddeeeeaaaabbbbccccddddeeee', 'hex'))
+    const client = new KRPC({
       nodes: ['localhost:' + server.address().port]
     })
 
@@ -33,28 +33,28 @@ tape('query + reply', function (t) {
 })
 
 tape('query + closest', function (t) {
-  var server = krpc()
-  var other = krpc()
-  var visitedOther = false
+  const server = new KRPC()
+  const other = new KRPC()
+  let visitedOther = false
 
   other.on('query', function (query, peer) {
     visitedOther = true
-    t.same(query.q.toString(), 'echo')
+    t.same(Buffer.from(query.q).toString(), 'echo')
     t.same(query.a.hello, 42)
     server.response(peer, query, { hello: 42 })
   })
 
   server.on('query', function (query, peer) {
-    t.same(query.q.toString(), 'echo')
+    t.same(Buffer.from(query.q).toString(), 'echo')
     t.same(query.a.hello, 42)
     server.response(peer, query, { hello: 42 }, [{ host: '127.0.0.1', port: other.address().port, id: other.id }])
   })
 
   other.bind(0, function () {
     server.bind(0, function () {
-      var replies = 2
-      var id = Buffer.from('aaaabbbbccccddddeeeeaaaabbbbccccddddeeee', 'hex')
-      var client = krpc({
+      let replies = 2
+      const id = new Uint8Array(Buffer.from('aaaabbbbccccddddeeeeaaaabbbbccccddddeeee', 'hex'))
+      const client = new KRPC({
         nodes: ['localhost:' + server.address().port, 'localhost:' + other.address().port]
       })
 
